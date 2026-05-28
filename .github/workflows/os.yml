@@ -1,0 +1,46 @@
+name: Remote Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: 'OS'
+        type: choice
+        required: true
+        default: 'ubuntu-latest'
+        options:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+jobs:
+  remote:
+    runs-on: ${{ github.event.inputs.os }}
+    timeout-minutes: 360
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install
+        run: npm install
+
+      - name: Create Tunnel
+        id: tunnel
+        uses: anyvm-org/cf-tunnel@v0
+        with:
+          protocol: http
+          port: 3000
+
+      - name: Run simple-remote-pair
+        env:
+          NODE_OPTIONS: --unhandled-rejections=strict
+        run: |
+          npm run start
+
+      - name: URL
+        run: |
+          echo "https://${{ steps.tunnel.outputs.server }}"
